@@ -2,11 +2,11 @@
 
 ## Overview
 
-This repository contains the evaluation reproduction material and guideline for the APTRACE's paper. The complete detection system will be released to the community soon. 
+This repository contains the evaluation reproduction material and guideline for the **THREATRACE**'s paper. The complete detection system will be released to the community soon. 
 
 ## Evaluation reproduction
 
-This is the guideline for reproducing the evaluation in the paper. APTRACE has the implementation of the Ubuntu system currently.
+This is the guideline for reproducing the evaluation in the paper. **THREATRACE** has the implementation of the Ubuntu system currently.
 
 ### Clone the repository and pre-requirement
 
@@ -30,13 +30,13 @@ Due to space constraints, we cannot store the parsed datasets in this repository
     You need to download: 
         all.tar.gz
 
-   Copy the dataset to ROOT/apTrace/graphchi-cpp-master/graph_data/streamspot/: 
+   Copy the dataset to ROOT/threaTrace/graphchi-cpp-master/graph_data/streamspot/: 
   
-    cp all.tar.gz ROOT/apTrace/graphchi-cpp-master/graph_data/streamspot/
+    cp all.tar.gz ROOT/threaTrace/graphchi-cpp-master/graph_data/streamspot/
 
    Run the parsing script:
  
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     python parse_streamspot.py
 
 
@@ -48,14 +48,14 @@ Due to space constraints, we cannot store the parsed datasets in this repository
         camflow-benign-*
         camflow-attack-*
 
-   Copy the dataset to ROOT/apTrace/graphchi-cpp-master/graph_data/unicornsc/: 
+   Copy the dataset to ROOT/threaTrace/graphchi-cpp-master/graph_data/unicornsc/: 
   
-    cp camflow-benign-* ROOT/apTrace/graphchi-cpp-master/graph_data/unicornsc/
-    cp camflow-attack-* ROOT/apTrace/graphchi-cpp-master/graph_data/unicornsc/
+    cp camflow-benign-* ROOT/threaTrace/graphchi-cpp-master/graph_data/unicornsc/
+    cp camflow-attack-* ROOT/threaTrace/graphchi-cpp-master/graph_data/unicornsc/
 
    Run the parsing script:
  
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     python parse_unicornsc.py
     
 > DARPA TC dataset
@@ -70,31 +70,31 @@ Due to space constraints, we cannot store the parsed datasets in this repository
           theia/ta1-theia-e3-official-6r.json.tar.gz
           trace/ta1-trace-e3-official-1.json.tar.gz
       
-   Copy the dataset to ROOT/apTrace/graphchi-cpp-master/graph_data/darpatc/: 
+   Copy the dataset to ROOT/threaTrace/graphchi-cpp-master/graph_data/darpatc/: 
   
-    cp ta1-* ROOT/apTrace/graphchi-cpp-master/graph_data/darpatc/
+    cp ta1-* ROOT/threaTrace/graphchi-cpp-master/graph_data/darpatc/
 
    Run the parsing script:
  
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     python parse_darpatc.py
 
 
 ### Evaluation in StreamSpot dataset
 
-We provide example models in `ROOT/apTrace/example_models/streamspot` for convenience. You can also choose to train the models. 
+We provide example models in `ROOT/threaTrace/example_models/streamspot` for convenience. You can also choose to train the models. 
 
 > Use example models
 
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     python setup.py
-    cp ROOT/apTrace/example_models/streamspot/* ROOT/apTrace/models/
-    cp ROOT/apTrace/example_models/streamspot/models_list.txt ./
-    cp ROOT/apTrace/example_models/streamspot/run_* ./
+    cp ROOT/threaTrace/example_models/streamspot/* ROOT/threaTrace/models/
+    cp ROOT/threaTrace/example_models/streamspot/models_list.txt ./
+    cp ROOT/threaTrace/example_models/streamspot/run_* ./
   
 > Or train models
 
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     python setup.py
     python train_streamspot.py
     
@@ -102,10 +102,10 @@ The training procedure may take some time.
 
 > Test
 
-Once the models are prepared, you can start testing APTRACE in StreamSpot dataset.
+Once the models are prepared, you can start testing **THREATRACE** in StreamSpot dataset.
 
 
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     chmod 777 run_benign.sh
     chmod 777 run_attack.sh
     ./run_benign.sh
@@ -117,19 +117,19 @@ When the testing procedure finishes, use the following command to evaluate the d
 
 ### Evaluation in Unicorn SC-2 dataset
 
-We provide example models in `ROOT/apTrace/example_models/unicornsc` for convenience. You can also choose to train the models. 
+We provide example models in `ROOT/threaTrace/example_models/unicornsc` for convenience. You can also choose to train the models. 
 
 > Use example models
 
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     python setup.py
-    cp ROOT/apTrace/example_models/unicornsc/* ROOT/apTrace/models/
-    cp ROOT/apTrace/example_models/unicornsc/models_list.txt ./
-    cp ROOT/apTrace/example_models/unicornsc/run_* ./
+    cp ROOT/threaTrace/example_models/unicornsc/* ROOT/threaTrace/models/
+    cp ROOT/threaTrace/example_models/unicornsc/models_list.txt ./
+    cp ROOT/threaTrace/example_models/unicornsc/run_* ./
 
 > Or train models
 
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     python setup.py
     python train_unicornsc.py
     
@@ -137,9 +137,9 @@ The training procedure may take some time.
 
 > Test
 
-Once the models are prepared, you can start testing APTRACE in Unicorn SC-2 dataset.
+Once the models are prepared, you can start testing **THREATRACE** in Unicorn SC-2 dataset.
 
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     chmod 777 run_benign.sh
     chmod 777 run_attack.sh
     ./run_benign.sh
@@ -151,17 +151,17 @@ When the testing procedure finishes, use the following command to evaluate the d
 
 ### Evaluation in DARPA TC dataset
 
-We provide example models in `ROOT/apTrace/example_models/darpatc` for convenience. You can also choose to train the models. 
+We provide example models in `ROOT/threaTrace/example_models/darpatc` for convenience. You can also choose to train the models. 
 
 > Use example models. Choose the scene X: cadets/trace/theia/fivedirections
 
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     python setup.py
-    cp ROOT/apTrace/example_models/darpatc/X/* ROOT/apTrace/models/
+    cp ROOT/threaTrace/example_models/darpatc/X/* ROOT/threaTrace/models/
 
 > Or train models. Choose the scene X: cadets/trace/theia/fivedirections
 
-    cd ROOT/apTrace/scripts
+    cd ROOT/threaTrace/scripts
     python setup.py
     python train_darpatc.py --scene X
     
@@ -169,7 +169,7 @@ The training procedure may take some time.
 
 > Test
 
-Once the models are prepared, you can start testing APTRACE in DARPA TC dataset. Set X as the same as the value in the training phase.
+Once the models are prepared, you can start testing **THREATRACE** in DARPA TC dataset. Set X as the same as the value in the training phase.
 
     python test_darpatc.py --scene X
 
