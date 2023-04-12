@@ -12,11 +12,25 @@ This is the guideline for reproducing the evaluation in the paper. **THREATRACE*
 
   1. Clone the complete repository into a directory (named as ROOT, the same below) of your Ubuntu system.
 
-  2. Deploy PyG, a geometric deep learning extension library for PyTorch. The installation guideline can be found here: https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html.
+  2. Deploy pytorch and Pyg. PyG is a geometric deep learning extension library for PyTorch. 
+  The environment requirements are as follows:
+  + cudatoolkit version: 10.2.89
+  + pytorch version: 1.9.1 
+  + torch-geometric version: 1.4.3
+ 
+  The installation guideline of pytorch can be found here: https://pytorch.org/get-started/locally/
+  
+  The installation guideline of Pyg can be found here: https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html.
 
   3. Other required Python packages: 
   
     numpy, pandas, argparse, subprocess, os, sys, time, psutil, random, csv, re
+    
+  4. Run the make script:
+  
+    cd ROOT/threaTrace/graphchi-cpp-master
+    make example_apps/train
+    make example_apps/test
 
 
 ### Datasets preparation
