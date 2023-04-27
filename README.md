@@ -17,8 +17,18 @@ This is the guideline for reproducing the evaluation in the paper. **THREATRACE*
   3. Other required Python packages: 
   
     numpy, pandas, argparse, subprocess, os, sys, time, psutil, random, csv, re
-
-
+    
+  3. The version of Python and some packages: 
+  
+    Python 3.6.13
+    pytorch 1.9.1
+    torch-cluster 1.5.9
+    torch-geometric 1.4.3
+    torch-scatter 2.0.9
+    torch-sparse 0.6.12
+    torch-spline-conv 1.2.1
+    
+  
 ### Datasets preparation
 
 Due to space constraints, we cannot store the parsed datasets in this repository. Therefore, the first step of the evaluation reproduction is to prepare the datasets. 
