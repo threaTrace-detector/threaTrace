@@ -19,7 +19,7 @@ def show(str):
 
 fp = []
 model_list = []
-
+final_anomaly = []
 feature_num = 0
 label_num = 0
 thre = 2.0
@@ -108,10 +108,8 @@ def raise_alert(k):
 	k = id_map_t[k]
 	if k in anomaly_node.keys():
 		if now_ts - anomaly_node[k] > alert_thre:
-			if first_alert == True:
-				print ('alert!!! node id: ' + str(k))
-				first_alert = False
 			anomaly_node.pop(k)
+			final_anomaly.append(k)
 	else:
 		anomaly_node[k] = now_ts	
 			
@@ -126,7 +124,8 @@ def detect(this_model):
 	global tn
 	global id_map_t
 	loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=batch_size, shuffle=True, add_self_loops=True)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+	#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cpu')
 	Net = SAGENet
 
 	test_acc = 0
@@ -179,6 +178,7 @@ def main():
 	f = open('models_list.txt', 'r')
 	for line in f:
 		temp = line.strip(' \n').split(' ')
+		if temp[0] == '': continue
 		temp2 = [int(i) for i in temp]
 		model_list.append(temp2)
 	f.close()
@@ -191,10 +191,9 @@ def main():
 	scene = int(int(graph_id)/100)+1
 	thre = float(sys.argv[4])
 	benign = 0
-	test_scene = 0
+
 	minfp = 10000
 	for this_model in model_list:
-		test_scene += 1
 		p = Popen('../graphchi-cpp-master/bin/example_apps/test file ../graphchi-cpp-master/graph_data/gdata filetype edgelist stream_file ../graphchi-cpp-master/graph_data/streamspot/' + str(scene) +'/' + graph_id + '.txt batch '+ss, shell=True, stdin=PIPE, stdout=PIPE)
 		while (1) :
 			id_map = {}
@@ -235,8 +234,10 @@ def main():
 			data = Data(x=x, y=y,edge_index=edge_index, test_mask = test_mask, train_mask = test_mask)
 			dataset = TestDataset([data])
 			data = dataset[0]
+			anomaly_node = {}
+			final_anomaly = []
 			detect(this_model)
-		if len(anomaly_node.keys()) < minfp: minfp = len(anomaly_node.keys())
+		if len(anomaly_node.keys()) + len(final_anomaly) < minfp: minfp = len(anomaly_node.keys())
 	show(str(graph_id) + ' finished. fp: ' + str(minfp))
 
 if __name__ == "__main__":

@@ -3,19 +3,30 @@ tp = 0
 fn = 0
 fp = 0
 eps = 1e-10
+threshold = 0
+
+f = open('threshold_unicorn.txt', 'r')
+for line in f:
+	threshold = int(line.strip('\n'))
+	break
+f.close()
+
+
 f = open('result_benign.txt', 'r')
 for line in f:
-	if 'fp: 0' in line:
-		tn += 1
-	else:
+	print(line.split(' '))
+	if int(line.split(' ')[3])>threshold:
 		fp += 1
+	else:
+		tn += 1
 f.close()
 f = open('result_attack.txt', 'r')
 for line in f:
-	if 'fp: 0' in line:
-		fn += 1
-	else:
+	line.split(' ')
+	if int(line.split(' ')[3])>threshold:
 		tp += 1
+	else:
+		fn += 1
 f.close()
 precision = tp/(tp+fp+eps)
 recall = tp/(tp+fn+eps)

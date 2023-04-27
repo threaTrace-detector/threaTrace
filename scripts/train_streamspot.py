@@ -21,14 +21,15 @@ def show(*s):
 		print (str(s[i]) + ' ', end = '')
 	print (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
-fp = []
+
 feature_num = 26*2
 label_num = 8
 thre = 1.0
 batch_size = 2000
 alert_thre = 300
 
-exist_model = []
+
+
 class TestDataset(InMemoryDataset):
 	def __init__(self, data_list):
 		super(TestDataset, self).__init__('/tmp/TestDataset')
@@ -151,7 +152,7 @@ def train_pro():
 	global label_num
 	print(data)
 	loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=batch_size, shuffle=True, add_self_loops=True)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cpu')
 	Net = SAGENet
 	model = Net(feature_num, label_num).to(device)
 	optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
@@ -288,13 +289,14 @@ def train_pro():
 			fw.write(' '+str(j))
 		fw.write('\n')
 	fw.close()
-
 	torch.save(model.state_dict(),'../models/'+str(graph_id)+'_'+str(loop_num))
+	loop_num += 1
 
 def splitDataset():
-	global trainSet
+	global trainSet, validateSetA, validateSetB 
 	trainSet = []
-
+	validateSetA = []
+	validateSetB = []
 	fw = open('run_benign.sh', 'w')
 	for k in range(6):
 		if k == 3: continue
@@ -303,8 +305,11 @@ def splitDataset():
 		for i in range(now, now + 100):
 			dataList.append(i)
 		tempTrainSet = random.sample(dataList, 75)
+		tempValidateSet = random.sample(dataList, 10)
 		tempTrainSet.sort()
+		tempValidateSet.sort()
 		trainSet.append(tempTrainSet)
+		validateSetB.append(tempValidateSet)
 		for i in range(now, now + 100):
 			if not i in tempTrainSet:
 				fw.write('python -u test_streamspot.py 200000 5000 ' + str(i) + ' 1.0 >> result_benign.txt\n')
@@ -315,11 +320,13 @@ def splitDataset():
 		dataList.append(i)
 	testSet = random.sample(dataList, 25)
 	testSet.sort()
+	validateSetA = random.sample(dataList, 20)
+	validateSetA.sort()
 	for i in testSet:
 		fw_a.write('python -u test_streamspot.py 200000 5000 ' + str(i) + ' 1.0 >> result_attack.txt\n')
 	fw_a.close()
 
-def validate(graph_id, ss):
+def validate(graph_id, ss, _flag):
 	global loader
 	global data
 	global device
@@ -330,6 +337,12 @@ def validate(graph_id, ss):
 	global optimizer
 	scene = int(int(graph_id)/100)+1
 	ans = 0
+	minfp = 10000
+	_exist_model = []
+	if _flag == 'b':
+			_exist_model = exist_model
+	else:
+			_exist_model.append(exist_model[len(exist_model)-1])
 	for this_model in exist_model:
 		if len(this_model) == 0: continue
 		p = Popen('../graphchi-cpp-master/bin/example_apps/test file ../graphchi-cpp-master/graph_data/gdata filetype edgelist stream_file ../graphchi-cpp-master/graph_data/streamspot/' + str(scene) + '/' + str(graph_id) + '.txt batch '+ss, shell=True, stdin=PIPE, stdout=PIPE)
@@ -374,7 +387,7 @@ def validate(graph_id, ss):
 			dataset = TestDataset([data])
 			data = dataset[0]
 			loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=batch_size, shuffle=True, add_self_loops=True)
-			device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')	
+			device = torch.device('cpu')	
 			Net = SAGENet	
 			model1 = Net(feature_num, label_num).to(device)
 			model = model1
@@ -397,8 +410,9 @@ def validate(graph_id, ss):
 					if len(fp) == 0: break
 				if len(fp) == 0: break
 			ans += len(fp)
-		if ans == 0: return 0
-	return ans	
+		if ans < minfp: minfp = ans
+		if minfp ==0: return 0
+	return minfp	
 
 
 def getFeature(id):
@@ -450,6 +464,7 @@ def main():
 	global loop_num
 	global trainSet
 	global exist_model
+	exist_model = []
 	anomaly_node = {}
 	ss = 200000
 	if len(sys.argv) > 1:
@@ -463,99 +478,116 @@ def main():
 
 	splitDataset()
 	for outLoop in range(5):
-		exist_model.append([])
-		current_pos = len(exist_model)-1
-		print('current_pos: ', current_pos)
-		validated_id = []
-		while(1):
-			maxi = -1
-			if outLoop == 0 and len(exist_model[current_pos]) == 0:
-				maxi = trainSet[outLoop][0]
-				getFeature(maxi)
-				show('First graph: ', maxi)
+		while (1):
+			exist_model.append([])
+			current_pos = len(exist_model)-1
+			print('current_pos: ', current_pos)
+			validated_id = []
+			while(1):
+				maxi = -1
+				if outLoop == 0 and len(exist_model[current_pos]) == 0:
+					maxi = trainSet[outLoop][0]
+					getFeature(maxi)
+					show('First graph: ', maxi)
 
+				else:
+					cnt = 0
+					cnt_all = len(validateSetB[outLoop])
+					maxfp = -1
+					maxi = 0
+					for j in validateSetB[outLoop]:
+						if j in validated_id: continue
+						flag = validate(j, '50000000', 'b')
+						show('Graph ', j, ' validating done. fp = ', flag)
+						if flag == 0: 
+							validated_id.append(j)
+						else:
+							cnt += 1
+						if flag > maxfp:
+							maxfp = flag
+							maxi = j
+					show('Number of fp!=0 and number of all: ', cnt, cnt_all, cnt/cnt_all)
+					if cnt/cnt_all < 0.2: break 
+				show('Graph ' + str(maxi) + ' start training new submodels.')
+				validated_id.append(maxi)
+				exist_model[current_pos].append(maxi)
+				loop_num = 0
+				graph_id = str(maxi)
+				scene = int(int(graph_id)/100)+1
+				p = Popen('../graphchi-cpp-master/bin/example_apps/train file ../graphchi-cpp-master/graph_data/gdata filetype edgelist stream_file ../graphchi-cpp-master/graph_data/streamspot/' + str(scene) + '/' + graph_id + '.txt batch '+str(ss), shell=True, stdin=PIPE, stdout=PIPE)
+				while (1) :
+					id_map = {}
+					id_map_t = {}
+					ts = {}
+					train_mask = []
+					x = []
+					y = []
+					edge_s = []
+					edge_e = []
+					this_ts = 0
+					node_num = int(p.stdout.readline())
+					if node_num == -1: break
+					for i in range(node_num):
+						line = bytes.decode(p.stdout.readline())
+						line =list(map(int, line.strip('\n').split(' ')))
+						id_map[line[0]] = i
+						id_map_t[i] = line[0]
+						y.append(line[1])
+						if line[2] == 1:
+							train_mask.append(True)
+						else:
+							train_mask.append(False)
+						x.append(line[3:len(line)-1])
+						ts[i] = line[len(line)-1] / 1000
+						if ts[i] > this_ts: this_ts = ts[i]
+					edge_num = int(p.stdout.readline())
+					for i in range(edge_num):
+						line = bytes.decode(p.stdout.readline())
+						line =list(map(int, line.strip('\n').split(' ')))
+						edge_s.append(id_map[line[0]])
+						edge_e.append(id_map[line[1]])
+					
+					x = torch.tensor(x, dtype=torch.float)	
+					y = torch.tensor(y, dtype=torch.long)
+					train_mask = torch.tensor(train_mask, dtype=torch.bool)
+					edge_index = torch.tensor([edge_s, edge_e], dtype=torch.long)
+					data = Data(x=x, y=y,edge_index=edge_index, test_mask = train_mask, train_mask = train_mask)
+					dataset = TestDataset([data])
+					data = dataset[0]
+					train_pro()
+			cnt = 0
+			cnt_all = len(validateSetA)
+			for i in validateSetA:
+				flag = validate(i, '50000000', 'a')
+				show('Graph ', i, ' final validating done. fp = ', flag)
+				if flag > 2: 
+					cnt += 1
+			show('Number of fp > 2 and number of all: ', cnt, cnt_all, cnt/cnt_all)
+			if cnt/cnt_all > 0.85: 
+				break
 			else:
-				cnt = 0
-				cnt_all = len(trainSet[outLoop])
-				maxfp = -1
-				maxi = 0
-				for j in trainSet[outLoop]:
-					if j in validated_id: continue
-					flag = validate(j, '50000000')
-					show('Graph ', j, ' validating done. fp = ', flag)
-					if flag == 0: 
-						validated_id.append(j)
-					else:
-						cnt += 1
-					if flag > maxfp:
-						maxfp = flag
-						maxi = j
-				show('Number of fp!=0 and number of all: ', cnt, cnt_all, cnt/cnt_all)
-				if cnt/cnt_all < 0.05: break 
-
-			show('Graph ' + str(maxi) + ' start training new submodels.')
-			validated_id.append(maxi)
-			exist_model[current_pos].append(maxi)
-			loop_num = 0
-			graph_id = str(maxi)
-			scene = int(int(graph_id)/100)+1
-			p = Popen('../graphchi-cpp-master/bin/example_apps/train file ../graphchi-cpp-master/graph_data/gdata filetype edgelist stream_file ../graphchi-cpp-master/graph_data/streamspot/' + str(scene) + '/' + graph_id + '.txt batch '+str(ss), shell=True, stdin=PIPE, stdout=PIPE)
-			while (1) :
-				id_map = {}
-				id_map_t = {}
-				ts = {}
-				train_mask = []
-				x = []
-				y = []
-				edge_s = []
-				edge_e = []
-				this_ts = 0
-				node_num = int(p.stdout.readline())
-				if node_num == -1: break
-				for i in range(node_num):
-					line = bytes.decode(p.stdout.readline())
-					line =list(map(int, line.strip('\n').split(' ')))
-					id_map[line[0]] = i
-					id_map_t[i] = line[0]
-					y.append(line[1])
-					if line[2] == 1:
-						train_mask.append(True)
-					else:
-						train_mask.append(False)
-					x.append(line[3:len(line)-1])
-					ts[i] = line[len(line)-1] / 1000
-					if ts[i] > this_ts: this_ts = ts[i]
-				edge_num = int(p.stdout.readline())
-				for i in range(edge_num):
-					line = bytes.decode(p.stdout.readline())
-					line =list(map(int, line.strip('\n').split(' ')))
-					edge_s.append(id_map[line[0]])
-					edge_e.append(id_map[line[1]])
-				
-				x = torch.tensor(x, dtype=torch.float)	
-				y = torch.tensor(y, dtype=torch.long)
-				train_mask = torch.tensor(train_mask, dtype=torch.bool)
-				edge_index = torch.tensor([edge_s, edge_e], dtype=torch.long)
-				data = Data(x=x, y=y,edge_index=edge_index, test_mask = train_mask, train_mask = train_mask)
-				dataset = TestDataset([data])
-				data = dataset[0]
-				train_pro()
-
+				current_model_list = exist_model.pop()
+				for i in current_model_list:
+					_this_loop = -1
+					while (1):
+						_this_loop += 1
+						_model_path = '../models/'+str(i)+'_'+str(_this_loop)
+						if not osp.exists(_model_path): break
+						os.system('rm ' + _model_path)
+						os.system('rm ' + '../models/tn_feature_label_'+str(i)+'_'+str(_this_loop)+'.txt')
+						os.system('rm ' + '../models/fp_feature_label_'+str(i)+'_'+str(_this_loop)+'.txt')
+					
 	fw = open('models_list.txt', 'w')
 	for i in exist_model:
 		for j in i:
 			fw.write(str(j)+' ')
 		fw.write('\n')
 	fw.close()
-	fw = open('models_history.txt', 'a')
-	for i in exist_model:
-		for j in i:
-			fw.write(str(j)+' ')
-		fw.write('\n')
-	fw.write('\n')
-	fw.close()
 
 if __name__ == "__main__":
 	graphchi_root = os.path.abspath(os.path.join(os.getcwd(), '../graphchi-cpp-master'))
 	os.environ['GRAPHCHI_ROOT'] = graphchi_root
+	os.system('python setup.py')
 	main()
+
+		

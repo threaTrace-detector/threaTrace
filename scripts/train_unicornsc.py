@@ -70,7 +70,6 @@ def train():
 		optimizer.zero_grad()
 		out = model(data.x.to(device), data_flow.to(device))
 		loss = F.nll_loss(out, data.y[data_flow.n_id].to(device))
-		# print(loss)
 		loss.backward()
 		optimizer.step()
 		total_loss += loss.item() * data_flow.batch_size
@@ -152,7 +151,7 @@ def train_pro():
 	global label_num
 	print(data)
 	loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=batch_size, shuffle=True, add_self_loops=True)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cpu')
 	Net = SAGENet
 	model = Net(feature_num, label_num).to(device)
 	optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
@@ -288,79 +287,33 @@ def train_pro():
 	fw.close()
 
 	torch.save(model.state_dict(),'../models/'+str(graph_id)+'_'+str(loop_num))
+	loop_num += 1
 
 def splitDataset():
-	global trainSet
+	global trainSet, validateSetA, validateSetB
 	dataList = []
+	validateSetA = []
+	validateSetB = []
 	for i in range(125):
 		dataList.append(i)
 	trainSet = random.sample(dataList, 100)
 	trainSet.sort()
+	validateSetB = random.sample(dataList, 50)
+	validateSetB.sort()
 	fw = open('run_benign.sh', 'w')
 	for i in range(125):
 		if not i in trainSet:
 			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 300 >> result_benign.txt\n')
 	fw.close()
-
+	dataList = []
+	for i in range(125, 150):
+		dataList.append(i)
+	validateSetA = random.sample(dataList, 10)
+	validateSetA.sort()
 	fw = open('run_attack.sh', 'w')
 	for i in range(25):
 		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack.txt\n')
 	fw.close()
-
-	fw = open('run_parameter.sh', 'w')
-	for i in range(125):
-		if not i in trainSet:
-			fw.write('python -u test_unicornsc.py 50000 5000 ' + str(i) + ' 2.0 300 >> result_benign_ss_50000.txt\n')
-			fw.write('python -u test_unicornsc.py 100000 5000 ' + str(i) + ' 2.0 300 >> result_benign_ss_100000.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 300 >> result_benign_ss_200000.txt\n')
-			fw.write('python -u test_unicornsc.py 500000 5000 ' + str(i) + ' 2.0 300 >> result_benign_ss_500000.txt\n')
-			fw.write('python -u test_unicornsc.py 1000000 5000 ' + str(i) + ' 2.0 300 >> result_benign_ss_1000000.txt\n')
-
-			fw.write('python -u test_unicornsc.py 200000 1000 ' + str(i) + ' 2.0 300 >> result_benign_bs_1000.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 2500 ' + str(i) + ' 2.0 300 >> result_benign_bs_2500.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 300 >> result_benign_bs_5000.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 7500 ' + str(i) + ' 2.0 300 >> result_benign_bs_7500.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 10000 ' + str(i) + ' 2.0 300 >> result_benign_bs_10000.txt\n')
-
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 1.0 300 >> result_benign_Rt_1.0.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 1.5 300 >> result_benign_Rt_1.5.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 300 >> result_benign_Rt_2.0.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.5 300 >> result_benign_Rt_2.5.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 3.0 300 >> result_benign_Rt_3.0.txt\n')
-
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 0 >> result_benign_Tt_0.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 150 >> result_benign_Tt_150.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 300 >> result_benign_Tt_300.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 450 >> result_benign_Tt_450.txt\n')
-			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 600 >> result_benign_Tt_600.txt\n')		
-
-	for i in range(25):
-		fw.write('python -u test_unicornsc.py 50000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack_ss_50000.txt\n')
-		fw.write('python -u test_unicornsc.py 100000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack_ss_100000.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack_ss_200000.txt\n')
-		fw.write('python -u test_unicornsc.py 500000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack_ss_500000.txt\n')
-		fw.write('python -u test_unicornsc.py 1000000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack_ss_1000000.txt\n')
-
-		fw.write('python -u test_unicornsc.py 200000 1000 ' + str(i+125) + ' 2.0 300 >> result_attack_bs_1000.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 2500 ' + str(i+125) + ' 2.0 300 >> result_attack_bs_2500.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack_bs_5000.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 7500 ' + str(i+125) + ' 2.0 300 >> result_attack_bs_7500.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 10000 ' + str(i+125) + ' 2.0 300 >> result_attack_bs_10000.txt\n')
-
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 1.0 300 >> result_attack_Rt_1.0.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 1.5 300 >> result_attack_Rt_1.5.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack_Rt_2.0.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.5 300 >> result_attack_Rt_2.5.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 3.0 300 >> result_attack_Rt_3.0.txt\n')
-
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 0 >> result_attack_Tt_0.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 150 >> result_attack_Tt_150.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack_Tt_300.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 450 >> result_attack_Tt_450.txt\n')
-		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 600 >> result_attack_Tt_600.txt\n')
-					
-	fw.close()
-
 	
 
 def validate(graph_id, ss):
@@ -414,7 +367,7 @@ def validate(graph_id, ss):
 		dataset = TestDataset([data])
 		data = dataset[0]
 		loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=batch_size, shuffle=True, add_self_loops=True)
-		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')	
+		device = torch.device('cpu')	
 		Net = SAGENet	
 		model1 = Net(feature_num, label_num).to(device)
 		model = model1
@@ -430,7 +383,6 @@ def validate(graph_id, ss):
 				fp = []
 				tn = []
 				model.load_state_dict(torch.load(model_path))
-
 				loss, test_acc = final_test(data.train_mask)
 				for j in tn:
 					data.train_mask[j] = False
@@ -496,39 +448,28 @@ def main():
 	if len(sys.argv) > 2: ss = sys.argv[2]
 	validated_id = []	
 	splitDataset()
+
+	exist_model = []
+	alert_thre = 0
+	maxi = -1
+	testcnt = 0
 	while(1):
-		maxi = -1
+
 		if len(exist_model) == 0:
 			maxi = trainSet[0]
 			getFeature(maxi)
 			show('First graph: ', maxi)
 
-		else:
-			cnt = 0
-			cnt_all = len(trainSet)-len(exist_model)
-			maxfp = -1
-			maxi = 0
-			for j in trainSet:
-				if j in validated_id: continue
-				flag = validate(j, '50000000')
-				if flag == 0: 
-					validated_id.append(j)
-				else:
-					show('Graph ', j, ' validating done. fp = ', flag)
-					cnt += 1
-				if flag > maxfp:
-					maxfp = flag
-					maxi = j
-			show('Number of fp!=0 and number of all: ', cnt, cnt_all, cnt/cnt_all)
-			if cnt/cnt_all < 0.1: break 
-
-		# validate done, start training.
+		# start training.
 		show('Graph ' + str(maxi) + ' start training new submodels.')
 		validated_id.append(maxi)
 		exist_model.append(maxi)
 		loop_num = 0
 		graph_id = str(maxi)
 		p = Popen('../graphchi-cpp-master/bin/example_apps/train file ../graphchi-cpp-master/graph_data/gdata filetype edgelist stream_file ../graphchi-cpp-master/graph_data/unicornsc/' + graph_id + '.txt batch '+ss, shell=True, stdin=PIPE, stdout=PIPE)
+		
+		
+
 		while (1) :
 			id_map = {}
 			id_map_t = {}
@@ -548,6 +489,7 @@ def main():
 				id_map_t[i] = line[0]
 				y.append(line[1])
 				if line[2] == 1:
+					testcnt += 1
 					train_mask.append(True)
 				else:
 					train_mask.append(False)
@@ -569,12 +511,63 @@ def main():
 			dataset = TestDataset([data])
 			data = dataset[0]
 			train_pro()
+
+
+		cnt = 0
+		cnt_all = len(validateSetA)
+		flag_all = []
+		for i in validateSetA:
+			flag = validate(i, '50000000')
+			flag_all.append(flag)
+			show('Graph ', i, ' final validating done. fp = ', flag)
+			if flag == 0: 
+				cnt += 1
+		flag_all.sort()
+		alert_thre = flag_all[1]-1
+		show('Current threshold = ', alert_thre)
+
+		if alert_thre < 0:
+			for i in exist_model:
+				exist_model.remove(i)
+				_this_loop = -1
+				while (1):
+					_this_loop += 1
+					_model_path = '../models/'+str(i)+'_'+str(_this_loop)
+					if not osp.exists(_model_path): break
+					os.system('rm ' + _model_path)
+					os.system('rm ' + '../models/tn_feature_label_'+str(i)+'_'+str(_this_loop)+'.txt')
+					os.system('rm ' + '../models/fp_feature_label_'+str(i)+'_'+str(_this_loop)+'.txt')
+			continue
+
+		cnt = 0
+		cnt_all = len(validateSetB)
+		maxfp = -1
+		flag = validate(maxi, '50000000')
+		show('Current Graph ', maxi, ' validating done. fp = ', flag)
+		maxi = 0
+		for j in validateSetB:
+			flag = validate(j, '50000000')
+			show('Graph ', j, ' validating done. fp = ', flag)
+			if flag > alert_thre:
+				cnt += 1
+			if flag > maxfp:
+				maxfp = flag
+				maxi = j
+
+		show('Number of exceed thre and number of all: ', cnt, cnt_all, cnt/cnt_all)
+		if cnt <= 2: break 
+	
 	fw = open('models_list.txt', 'w')
 	for i in exist_model:
 		fw.write(str(i)+'\n')
+	fw.close()
+	
+	fw = open('threshold_unicorn.txt', 'w')
+	fw.write(str(alert_thre)+'\n')
 	fw.close()
 
 if __name__ == "__main__":
 	graphchi_root = os.path.abspath(os.path.join(os.getcwd(), '../graphchi-cpp-master'))
 	os.environ['GRAPHCHI_ROOT'] = graphchi_root
+	os.system('python setup.py')
 	main()

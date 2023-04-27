@@ -129,7 +129,7 @@ def detect():
 	global tn
 	global id_map_t
 	loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=batch_size, shuffle=True, add_self_loops=True)
-	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+	device = torch.device('cpu')
 	Net = SAGENet
 
 	test_acc = 0

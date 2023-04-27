@@ -29,6 +29,7 @@ def MyDataset(path, model):
 	edge_s = []
 	edge_e = []
 	data_thre = 1000000
+
 	for out_loop in range(1):
 		f = open(path, 'r')
 

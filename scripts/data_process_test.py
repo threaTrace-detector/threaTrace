@@ -11,9 +11,9 @@ from torch_geometric.data import Data, InMemoryDataset
 def show(str):
 	print (str + ' ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
-class TestDataset(InMemoryDataset):
+class TestDatasetA(InMemoryDataset):
 	def __init__(self, data_list):
-		super(TestDataset, self).__init__('/tmp/TestDataset')
+		super(TestDatasetA, self).__init__('/tmp/TestDataset')
 		self.data, self.slices = self.collate(data_list)
 
 	def _download(self):
@@ -21,7 +21,7 @@ class TestDataset(InMemoryDataset):
 	def _process(self):
 		pass
 
-def MyDataset(path, model):
+def MyDatasetA(path, model):
 	graphId = model
 	feature_num = 0
 	label_num = 0
@@ -62,13 +62,13 @@ def MyDataset(path, model):
 	fw2 = open('id_to_uuid.txt', 'w')
 	nodeId_map = {}
 	cnt = 0
+	nodeA = []
 	for i in range(1):
 		now_path = path
 		show(now_path)
 		f = open(now_path, 'r')
 		for line in f:
 			cnt += 1
-			if cnt % 1000000 == 0: show(str(cnt))
 			temp = line.strip('\n').split('\t')
 			if not (temp[1] in label_map.keys()): continue
 			if not (temp[3] in label_map.keys()): continue
@@ -80,6 +80,7 @@ def MyDataset(path, model):
 
 				if temp[0] in ground_truth.keys():
 					fw.write(str(nodeId_map[temp[0]])+' '+temp[1]+' '+temp[0]+'\n')
+					nodeA.append(node_cnt)
 				node_cnt += 1
 
 			temp[0] = nodeId_map[temp[0]]	
@@ -90,6 +91,7 @@ def MyDataset(path, model):
 
 				if temp[2] in ground_truth.keys():
 					fw.write(str(nodeId_map[temp[2]])+' '+temp[3]+' '+temp[2]+'\n')
+					nodeA.append(node_cnt)
 				node_cnt += 1
 			temp[2] = nodeId_map[temp[2]]		
 			temp[1] = label_map[temp[1]]
@@ -140,4 +142,38 @@ def MyDataset(path, model):
 	edge_index = torch.tensor([edge_s, edge_e], dtype=torch.long)
 	data1 = Data(x=x, y=y,edge_index=edge_index, train_mask=train_mask, test_mask = test_mask)
 	feature_num *= 2
-	return [data1], feature_num, label_num, adj, adj2
+	neibor = set()
+	_neibor = {}
+	for i in nodeA:
+		neibor.add(i)
+		if not i in _neibor.keys():
+			templ = []
+			_neibor[i] = templ
+		if not i in _neibor[i]:
+			_neibor[i].append(i)		
+		if i in adj.keys():
+			for j in adj[i]:
+				neibor.add(j)
+				if not j in _neibor.keys():
+					templ = []
+					_neibor[j] = templ
+				if not i in _neibor[j]:
+					_neibor[j].append(i)	
+				if not j in adj.keys(): continue
+				for k in adj[j]:
+					neibor.add(k)
+					if not k in _neibor.keys():
+						templ = []
+						_neibor[k] = templ
+					if not i in _neibor[k]:
+						_neibor[k].append(i)
+		if i in adj2.keys():
+			for j in adj2[i]:
+				neibor.add(j)
+				if not j in adj2.keys(): continue
+				for k in adj2[j]:
+					neibor.add(k)
+	_nodeA = []
+	for i in neibor:
+		_nodeA.append(i)
+	return [data1], feature_num, label_num, adj, adj2, nodeA, _nodeA, _neibor
