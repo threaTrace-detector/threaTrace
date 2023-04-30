@@ -18,7 +18,7 @@ parser.add_argument('--scene', type=str, default='')
 args = parser.parse_args()
 assert args.scene in ['cadets','trace','theia','fivedirections']
 
-thre_map = {"cadets":1.5,"trace":1.0,"theia":1.5,"fivedirections":1.5}
+thre_map = {"cadets":1.5,"trace":1.0,"theia":1.5,"fivedirections":1.0}
 b_size = 5000
 nodeA = []
 path = '../graphchi-cpp-master/graph_data/darpatc/' + args.scene + '_test.txt' 
