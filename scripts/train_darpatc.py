@@ -11,7 +11,7 @@ from torch_geometric.nn import SAGEConv, GATConv
 from data_process_train import *
 from data_process_test import *
 
-thre_map = {"cadets":1.5,"trace":1.0,"theia":1.5,"fivedirections":1.5}
+thre_map = {"cadets":1.5,"trace":1.0,"theia":1.5,"fivedirections":1.0}
 
 def show(*s):
 	for i in range(len(s)):
