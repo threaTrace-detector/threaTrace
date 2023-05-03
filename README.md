@@ -187,6 +187,9 @@ When the testing procedure finishes, use the following command to evaluate the d
 
     python evaluate_darpatc.py
 
+## Contact us
+
+Thanks for your interest in **THREATRACE**! Contact us (wangsu17@mails.tsinghua.edu.cn) if there are any questions or discussions!
 
 ## License
 
