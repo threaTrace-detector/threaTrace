@@ -290,9 +290,8 @@ def train_pro():
 	loop_num += 1
 
 def splitDataset():
-	global trainSet, validateSetA, validateSetB
+	global trainSet, validateSetB
 	dataList = []
-	validateSetA = []
 	validateSetB = []
 	for i in range(125):
 		dataList.append(i)
@@ -305,11 +304,6 @@ def splitDataset():
 		if not i in trainSet:
 			fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i) + ' 2.0 300 >> result_benign.txt\n')
 	fw.close()
-	dataList = []
-	for i in range(125, 150):
-		dataList.append(i)
-	validateSetA = random.sample(dataList, 10)
-	validateSetA.sort()
 	fw = open('run_attack.sh', 'w')
 	for i in range(25):
 		fw.write('python -u test_unicornsc.py 200000 5000 ' + str(i+125) + ' 2.0 300 >> result_attack.txt\n')
@@ -511,34 +505,7 @@ def main():
 			dataset = TestDataset([data])
 			data = dataset[0]
 			train_pro()
-
-
-		cnt = 0
-		cnt_all = len(validateSetA)
-		flag_all = []
-		for i in validateSetA:
-			flag = validate(i, '50000000')
-			flag_all.append(flag)
-			show('Graph ', i, ' final validating done. fp = ', flag)
-			if flag == 0: 
-				cnt += 1
-		flag_all.sort()
-		alert_thre = flag_all[1]-1
-		show('Current threshold = ', alert_thre)
-
-		if alert_thre < 0:
-			for i in exist_model:
-				exist_model.remove(i)
-				_this_loop = -1
-				while (1):
-					_this_loop += 1
-					_model_path = '../models/'+str(i)+'_'+str(_this_loop)
-					if not osp.exists(_model_path): break
-					os.system('rm ' + _model_path)
-					os.system('rm ' + '../models/tn_feature_label_'+str(i)+'_'+str(_this_loop)+'.txt')
-					os.system('rm ' + '../models/fp_feature_label_'+str(i)+'_'+str(_this_loop)+'.txt')
-			continue
-
+			
 		cnt = 0
 		cnt_all = len(validateSetB)
 		maxfp = -1
