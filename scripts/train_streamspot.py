@@ -326,95 +326,6 @@ def splitDataset():
 		fw_a.write('python -u test_streamspot.py 200000 5000 ' + str(i) + ' 1.0 >> result_attack.txt\n')
 	fw_a.close()
 
-def validate(graph_id, ss, _flag):
-	global loader
-	global data
-	global device
-	global exist_model
-	global fp
-	global tn
-	global model
-	global optimizer
-	scene = int(int(graph_id)/100)+1
-	ans = 0
-	minfp = 10000
-	_exist_model = []
-	if _flag == 'b':
-			_exist_model = exist_model
-	else:
-			_exist_model.append(exist_model[len(exist_model)-1])
-	for this_model in exist_model:
-		if len(this_model) == 0: continue
-		p = Popen('../graphchi-cpp-master/bin/example_apps/test file ../graphchi-cpp-master/graph_data/gdata filetype edgelist stream_file ../graphchi-cpp-master/graph_data/streamspot/' + str(scene) + '/' + str(graph_id) + '.txt batch '+ss, shell=True, stdin=PIPE, stdout=PIPE)
-		ans = 0
-		while (1) :
-			id_map = {}
-			id_map_t = {}
-			ts = {}
-			train_mask = []
-			x = []
-			y = []
-			edge_s = []
-			edge_e = []
-			this_ts = 0
-			node_num = int(p.stdout.readline())
-			if node_num == -1: break
-			for i in range(node_num):
-				line = bytes.decode(p.stdout.readline())
-				line =list(map(int, line.strip('\n').split(' ')))
-				id_map[line[0]] = i
-				id_map_t[i] = line[0]
-				y.append(line[1])
-				if line[2] == 1:
-					train_mask.append(True)
-				else:
-					train_mask.append(False)
-				x.append(line[3:len(line)-1])
-				ts[i] = line[len(line)-1] / 1000
-				if ts[i] > this_ts: this_ts = ts[i]
-			edge_num = int(p.stdout.readline())
-			for i in range(edge_num):
-				line = bytes.decode(p.stdout.readline())
-				line =list(map(int, line.strip('\n').split(' ')))
-				edge_s.append(id_map[line[0]])
-				edge_e.append(id_map[line[1]])
-			
-			x = torch.tensor(x, dtype=torch.float)	
-			y = torch.tensor(y, dtype=torch.long)
-			train_mask = torch.tensor(train_mask, dtype=torch.bool)
-			edge_index = torch.tensor([edge_s, edge_e], dtype=torch.long)
-			data = Data(x=x, y=y,edge_index=edge_index, test_mask = train_mask, train_mask = train_mask)
-			dataset = TestDataset([data])
-			data = dataset[0]
-			loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=batch_size, shuffle=True, add_self_loops=True)
-			device = torch.device('cpu')	
-			Net = SAGENet	
-			model1 = Net(feature_num, label_num).to(device)
-			model = model1
-			optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
-			fp = []
-			tn = []
-			for i in this_model:
-				this_loop = -1
-				while(1):
-					this_loop += 1
-					model_path = '../models/'+str(i)+'_'+str(this_loop)
-					if not osp.exists(model_path): break
-					fp = []
-					tn = []
-					model.load_state_dict(torch.load(model_path))
-
-					loss, test_acc = final_test(data.train_mask)
-					for j in tn:
-						data.train_mask[j] = False
-					if len(fp) == 0: break
-				if len(fp) == 0: break
-			ans += len(fp)
-		if ans < minfp: minfp = ans
-		if minfp ==0: return 0
-	return minfp	
-
-
 def getFeature(id):
 	global feature_num
 	global label_num
@@ -555,28 +466,7 @@ def main():
 					dataset = TestDataset([data])
 					data = dataset[0]
 					train_pro()
-			cnt = 0
-			cnt_all = len(validateSetA)
-			for i in validateSetA:
-				flag = validate(i, '50000000', 'a')
-				show('Graph ', i, ' final validating done. fp = ', flag)
-				if flag > 2: 
-					cnt += 1
-			show('Number of fp > 2 and number of all: ', cnt, cnt_all, cnt/cnt_all)
-			if cnt/cnt_all > 0.85: 
-				break
-			else:
-				current_model_list = exist_model.pop()
-				for i in current_model_list:
-					_this_loop = -1
-					while (1):
-						_this_loop += 1
-						_model_path = '../models/'+str(i)+'_'+str(_this_loop)
-						if not osp.exists(_model_path): break
-						os.system('rm ' + _model_path)
-						os.system('rm ' + '../models/tn_feature_label_'+str(i)+'_'+str(_this_loop)+'.txt')
-						os.system('rm ' + '../models/fp_feature_label_'+str(i)+'_'+str(_this_loop)+'.txt')
-					
+			break	
 	fw = open('models_list.txt', 'w')
 	for i in exist_model:
 		for j in i:
