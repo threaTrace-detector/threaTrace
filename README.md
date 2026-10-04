@@ -189,7 +189,7 @@ When the testing procedure finishes, use the following command to evaluate the d
 
 ## Contact us
 
-Thanks for your interest in **THREATRACE**! Contact us (wangsu17@mails.tsinghua.edu.cn) if there are any questions or discussions!
+Thanks for your interest in **THREATRACE**! Contact us (wangsu@zgclab.edu.cn) if there are any questions or discussions!
 
 ## License
 
