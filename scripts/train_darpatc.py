@@ -86,70 +86,6 @@ def final_test(mask):
 		correct += pred.eq(data.y[data_flow.n_id].to(device)).sum().item()
 	return correct / mask.sum().item()
 
-def validate():
-	global fp, tn
-	global loader, device, model, optimizer, data
-
-	show('Start validating')
-	path = '../graphchi-cpp-master/graph_data/darpatc/' + args.scene + '_test.txt'
-	data, feature_num, label_num, adj, adj2, nodeA, _nodeA, _neibor = MyDatasetA(path, 0)
-	dataset = TestDatasetA(data)
-	data = dataset[0]
-	print(data)
-	loader = NeighborSampler(data, size=[1.0, 1.0], num_hops=2, batch_size=b_size, shuffle=False, add_self_loops=True)
-	device = torch.device('cpu')	
-	Net = SAGENet	
-	model1 = Net(feature_num, label_num).to(device)
-	model = model1
-	optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)
-	fp = []
-	tn = []
-
-	out_loop = -1
-	while(1):
-		out_loop += 1
-		print('validating in model ', str(out_loop))
-		model_path = '../models/model_'+str(out_loop)
-		if not osp.exists(model_path): break
-		model.load_state_dict(torch.load(model_path))
-		fp = []
-		tn = []
-		auc = final_test(data.test_mask)
-		print('fp and fn: ', len(fp), len(tn))
-		_fp = 0
-		_tp = 0
-		eps = 1e-10
-		tempNodeA = {}
-		for i in nodeA:
-			tempNodeA[i] = 1
-		for i in fp:
-			if not i in _nodeA:
-				_fp += 1
-			if not i in _neibor.keys():
-				continue
-			for j in _neibor[i]:
-				if j in tempNodeA.keys():
-					tempNodeA[j] = 0
-		for i in tempNodeA.keys():
-			if tempNodeA[i] == 0:
-				_tp += 1
-		print('Precision: ', _tp/(_tp+_fp))
-		print('Recall: ', _tp/len(nodeA))
-		if (_tp/len(nodeA) > 0.8) and (_tp/(_tp+_fp+eps) > 0.7):
-			while (1):
-				out_loop += 1
-				model_path = '../models/model_'+str(out_loop)
-				if not osp.exists(model_path): break
-				os.system('rm ../models/model_'+str(out_loop))
-				os.system('rm ../models/tn_feature_label_'+str(graphId)+'_'+str(out_loop)+'.txt')
-				os.system('rm ../models/fp_feature_label_'+str(graphId)+'_'+str(out_loop)+'.txt')
-			return 1
-		if (_tp/len(nodeA) <= 0.8):
-			return 0
-		for j in tn:
-			data.test_mask[j] = False
-		
-	return 0
 
 def train_pro():
 	global data, nodeA, _nodeA, _neibor, b_size, feature_num, label_num, graphId
@@ -250,16 +186,7 @@ def main():
 	b_size = 5000
 	thre = thre_map[args.scene]
 	os.system('cp ../groundtruth/'+args.scene+'.txt groundtruth_uuid.txt')
-	while (1):
-		train_pro()
-		flag = validate()
-		if flag == 1:
-			break
-		else:
-			os.system('rm ../models/model_*')
-			os.system('rm ../models/tn_feature_label_*')
-			os.system('rm ../models/fp_feature_label_*')
-
+	train_pro()
 
 
 if __name__ == "__main__":
